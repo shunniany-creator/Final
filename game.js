@@ -1,45 +1,60 @@
 /**
  * game.js
- * 遊戲啟動點：負責全域初始化與場景配置
+ * 遊戲啟動點：負責全域初始化、場景配置與系統串接
  */
 
-// 1. 在最外層實例化 GameLogic，確保所有場景都能透過 logic 變數共享數據
-// 這解決了你之前提到的「黑屏」問題，因為數據在場景啟動前就準備好了
+// 1. 初始化核心邏輯 (包含英雄庫、背包、商店機率等)
+// 確保 logic 變數在全域範圍內可被所有場景存取
 const logic = new GameLogic();
 
 const config = {
     type: Phaser.AUTO,
-    width: 450,       // 手機直向比例
+    width: 450,         // 標準手機直向比例
     height: 800,
     backgroundColor: '#1a1a1a',
     parent: 'game-container',
     
-    // 螢幕自適應設定
+    // 螢幕自適應：確保在不同尺寸的手機或電腦瀏覽器都能正確顯示
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
 
-    // 實體引擎設定 (如果之後需要物理效果可開啟)
+    // 實體引擎：三消掉落的 Bounce 效果與後續技能特效使用
     physics: {
         default: 'arcade',
         arcade: {
+            gravity: { y: 0 },
             debug: false
         }
     },
 
     /**
-     * 場景清單
-     * 放在陣列第一個的場景 (MainMenu) 會被優先執行
+     * 註冊所有遊戲場景
+     * 順序說明：
+     * 1. MainMenu: 遊戲入口、顯示等級與金幣
+     * 2. GameScene: 核心三消戰鬥
+     * 3. StoreScene: 購買英雄與抽卡系統
+     * 4. SquadScene: 英雄編隊與備戰（依等級開放格位）
+     * 5. InventoryScene: 背包系統，查看擁有的道具與英雄詳情
      */
-    scene: [MainMenu, GameScene]
+    scene: [
+        MainMenu, 
+        GameScene, 
+        StoreScene, 
+        SquadScene, 
+        InventoryScene
+    ]
 };
 
-// 2. 初始化遊戲
+// 2. 正式啟動遊戲實例
 const game = new Phaser.Game(config);
 
 /**
- * 除錯小技巧 (Debug Helper)
- * 你可以在瀏覽器控制台輸入 logic，查看當前所有數值
+ * 除錯助手
+ * 你可以在 Chrome 控制台輸入 `logic.currency.diamonds += 1000` 來測試抽卡
  */
-console.log("遊戲初始化完成，當前關卡：", logic.currentLevel);
+console.log("--- 遊戲系統啟動成功 ---");
+console.log(`當前玩家等級: ${logic.playerLevel}`);
+console.log(`已解鎖英雄數: ${logic.heroes.length}`);
+console.log(`當前出戰人數: ${logic.team.length} / ${Math.min(5, 1 + Math.floor(logic.playerLevel / 3))}`);
