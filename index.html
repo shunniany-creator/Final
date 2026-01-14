@@ -5,23 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Merge Dungeon Rush - 三消地牢 (擴張版)</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            font-family: 'Microsoft JhengHei', Arial, sans-serif;
-        }
-        #game-container {
-            box-shadow: 0 0 30px rgba(238, 119, 0, 0.3); /* 橘色發光裝飾 */
-            border: 2px solid #444;
-            background-color: #1a1a1a;
-        }
-    </style>
+     body {
+        margin: 0;
+        padding: 0;
+        background-color: #000; /* 背景全黑才能突顯橘光 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    #game-container {
+        width: 450px;
+        height: 800px;
+        position: relative;
+        /* 橘色發光 */
+        box-shadow: 0 0 30px rgba(238, 119, 0, 0.4); 
+        border: 2px solid #555;
+        background-color: #1a1a1a;
+        overflow: hidden;
+    }
+</style>
 </head>
 <body>
 
@@ -37,3 +42,4 @@
 
 </body>
 </html>
+
