@@ -1,4 +1,4 @@
-]/**
+/**
  * logic.js 
  * 負責處理數值計算、盤面邏輯、戰鬥狀態與英雄系統
  */
@@ -246,5 +246,5 @@ class GameLogic {
     }
 }
 
-// 實例化邏輯
-const logic = new GameLogic();
+
+
