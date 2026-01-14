@@ -31,6 +31,20 @@ class MainMenu extends Phaser.Scene {
         this.add.text(60, 140, `玩家等級: LV.${logic.playerLevel}`, { fontSize: '20px', color: '#ffffff' });
         this.add.text(60, 175, `基礎攻擊: ${logic.baseAttackPower}`, { fontSize: '18px', color: '#aaaaaa' });
 
+
+        // 在 MainMenu 的 create() 內增加：
+        let storeBtn = this.add.rectangle(100, 680, 120, 50, 0x444444).setInteractive();
+        this.add.text(100, 680, "商店", { fontSize: '20px' }).setOrigin(0.5);
+        storeBtn.on('pointerdown', () => this.scene.start('StoreScene'));
+
+        let squadBtn = this.add.rectangle(225, 680, 120, 50, 0x444444).setInteractive();
+        this.add.text(225, 680, "備戰", { fontSize: '20px' }).setOrigin(0.5);
+        squadBtn.on('pointerdown', () => this.scene.start('SquadScene'));
+
+        let invBtn = this.add.rectangle(350, 680, 120, 50, 0x444444).setInteractive();
+        this.add.text(350, 680, "背包", { fontSize: '20px' }).setOrigin(0.5);
+        // invBtn.on('pointerdown', () => this.scene.start('InventoryScene'));
+
         // --- 4. 遊戲標題 ---
         let title = this.add.text(225, 320, "MERGE\nDUNGEON RUSH", {
             fontSize: '42px', 
@@ -91,3 +105,4 @@ class MainMenu extends Phaser.Scene {
         this.diamondText.setText(logic.currency.diamonds);
     }
 }
+
