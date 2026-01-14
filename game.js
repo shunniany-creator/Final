@@ -9,24 +9,19 @@ const logic = new GameLogic();
 
 const config = {
     type: Phaser.AUTO,
-    width: 450,         // 標準手機直向比例
+    parent: 'game-container', // 確保掛載在正確的 div 上
+    width: 450,
     height: 800,
     backgroundColor: '#1a1a1a',
-    parent: 'game-container',
-    
-    // 螢幕自適應：確保在不同尺寸的手機或電腦瀏覽器都能正確顯示
-    scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-    },
 
-    // 實體引擎：三消掉落的 Bounce 效果與後續技能特效使用
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
+    scale: {
+        // FIT 會在保持比例的情況下縮放以適應父容器
+        mode: Phaser.Scale.FIT, 
+        // 確保在父容器中水平與垂直置中
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        // 這行很重要：強制使用我們定義的寬高
+        width: 450,
+        height: 800
     },
 
     /**
@@ -58,3 +53,4 @@ console.log("--- 遊戲系統啟動成功 ---");
 console.log(`當前玩家等級: ${logic.playerLevel}`);
 console.log(`已解鎖英雄數: ${logic.heroes.length}`);
 console.log(`當前出戰人數: ${logic.team.length} / ${Math.min(5, 1 + Math.floor(logic.playerLevel / 3))}`);
+
