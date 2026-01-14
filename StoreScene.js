@@ -7,11 +7,11 @@ class StoreScene extends Phaser.Scene {
 
     preload() {
         // 載入五位英雄的立繪
-        this.load.image('hero_thunder', 'assets/character/Lyra.png');
-        this.load.image('hero_light', 'assets/character/Iris.png');
-        this.load.image('hero_poison', 'assets/character/Vipera.png');
-        this.load.image('hero_fire', 'assets/character/Hestia.png');
-        this.load.image('hero_ice', 'assets/character/Elsa.png');
+        this.load.image('hero_thunder', 'assets/character/Lyra.jpg');
+        this.load.image('hero_light', 'assets/character/Iris.jpg');
+        this.load.image('hero_poison', 'assets/character/Vipera.jpg');
+        this.load.image('hero_fire', 'assets/character/Hestia.jpg');
+        this.load.image('hero_ice', 'assets/character/Elsa.jpg');
     }
 
     create() {
