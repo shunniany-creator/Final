@@ -1,244 +1,150 @@
 /**
- * GameScene.js
- * 負責戰鬥畫面渲染、消除動畫、掉落補位與回合清算
+ * SquadScene.js
+ * 負責英雄編隊管理：包含更換出戰成員與查看英雄詳情
  */
-class GameScene extends Phaser.Scene {
+class SquadScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'GameScene' });
-    }
-
-    preload() {
-        // 載入方塊：0:ICE, 1:FIRE, 2:THUNDER, 3:POISON
-        this.load.image('type0', 'assets/ice/item.png');
-        this.load.image('type1', 'assets/fire/item.png');
-        this.load.image('type2', 'assets/thunder/item.png');
-        this.load.image('type3', 'assets/poison/item.png');
-        
-        // 載入英雄縮圖 (用於戰鬥介面)
-        this.load.image('hero_thunder', 'assets/character/Lyra.jpg');
-        this.load.image('hero_light', 'assets/character/Iris.jpg');
-        this.load.image('hero_poison', 'assets/character/Vipera.jpg');
-        this.load.image('hero_fire', 'assets/character/Hestia.jpg');
-        this.load.image('hero_ice', 'assets/character/Elsa.jpg');
+        super({ key: 'SquadScene' });
     }
 
     create() {
-        // --- 1. 基礎設定 ---
-        this.sprites = [];
-        this.tileSize = 60;
-        this.offset = { x: 45, y: 380 }; // 稍微下移，為英雄欄留出空間
-        this.isAnimating = false;
-
-        // --- 2. 繪製戰鬥區域 UI ---
-        this.add.rectangle(225, 140, 420, 240, 0x333333).setStrokeStyle(2, 0x555555);
+        // 1. 背景底色
+        this.add.rectangle(225, 400, 450, 800, 0x12121a);
         
-        this.hpText = this.add.text(50, 40, `BOSS HP: ${logic.monsterHP}`, { 
-            fontSize: '28px', color: '#ff4444', fontStyle: 'bold' 
-        });
-        
-        this.playerHPText = this.add.text(50, 80, `PLAYER HP: ${logic.playerHP} / ${logic.playerMaxHP}`, { 
-            fontSize: '24px', color: '#44ff44', fontStyle: 'bold' 
+        // 標題
+        this.add.text(225, 50, "SQUAD MANAGEMENT", { 
+            fontSize: '28px', 
+            color: '#ffffff', 
+            fontStyle: 'bold' 
+        }).setOrigin(0.5);
+
+        // 2. 渲染上方：當前出戰編隊 (Active Squad)
+        this.drawActiveSquad();
+
+        // 3. 渲染下方：擁有的英雄庫 (Hero Inventory)
+        this.drawHeroInventory();
+
+        // 4. 返回按鈕
+        const backBtn = this.add.container(225, 740);
+        const btnBg = this.add.rectangle(0, 0, 200, 50, 0x333344).setInteractive({ useHandCursor: true });
+        const btnText = this.add.text(0, 0, "SAVE & RETURN", { fontSize: '20px', color: '#fff' }).setOrigin(0.5);
+        backBtn.add([btnBg, btnText]);
+
+        btnBg.on('pointerdown', () => {
+            this.scene.start('MainMenu');
         });
 
-        this.statusText = this.add.text(50, 120, `LEVEL: ${logic.currentLevel} | 攻擊力: ${logic.baseAttackPower}`, {
-            fontSize: '16px', color: '#ffffff'
-        });
-
-        // --- 3. 繪製備戰英雄區 (新增) ---
-        this.drawSquadUI();
-
-        // --- 4. 初始化操作組件 (Hand.js) ---
-        this.hand = new Hand(this, logic, this.tileSize, this.offset, this.sprites, (p1, p2) => {
-            this.swapTiles(p1, p2);
-        });
-
-        this.createBoard();
+        // 提示文字
+        this.add.text(225, 785, "* Long press hero to view skills", { fontSize: '14px', color: '#666' }).setOrigin(0.5);
     }
 
     /**
-     * 在戰鬥畫面渲染 5 個英雄縮圖
+     * 繪製上方 5 個出戰位置
      */
-    drawSquadUI() {
-        const startX = 65;
-        const y = 230; // 位於資訊與盤面之間
-        
-        logic.squad.forEach((hero, i) => {
-            const x = startX + (i * 80);
-            const slot = this.add.container(x, y);
+    drawActiveSquad() {
+        this.add.text(40, 110, "ACTIVE SQUAD (Tap to remove)", { fontSize: '16px', color: '#ffd700' });
+
+        // 固定顯示 5 個格子
+        for (let i = 0; i < 5; i++) {
+            const x = 65 + (i * 80);
+            const y = 185;
+            const hero = logic.squad[i]; // 從 logic 讀取目前編隊狀態
+
+            const container = this.add.container(x, y);
             
-            // 縮圖背景框
-            const bg = this.add.rectangle(0, 0, 64, 64, 0x000000, 0.5).setStrokeStyle(2, 0x888888).setInteractive();
-            slot.add(bg);
+            // 格子底框
+            const slotBg = this.add.rectangle(0, 0, 70, 95, 0x1f1f2e)
+                .setStrokeStyle(2, 0x444455)
+                .setInteractive();
+            container.add(slotBg);
 
             if (hero) {
-                const img = this.add.image(0, 0, 'hero_' + hero.type).setDisplaySize(60, 60);
-                slot.add(img);
-                
-                // 長按查看技能
-                this.setupLongPress(bg, hero);
-            } else {
-                slot.add(this.add.text(0, 0, "+", { fontSize: '24px', color: '#444' }).setOrigin(0.5));
-            }
-        });
-    }
+                // 英雄圖片
+                const img = this.add.image(0, 0, 'hero_' + hero.type).setDisplaySize(66, 90);
+                container.add(img);
 
-    setupLongPress(object, hero) {
-        let timer;
-        object.on('pointerdown', () => {
-            timer = this.time.delayedCall(600, () => {
-                this.scene.launch('HeroDetailScene', { hero: hero });
-            });
-        });
-        object.on('pointerup', () => { if (timer) timer.remove(); });
-        object.on('pointerout', () => { if (timer) timer.remove(); });
-    }
-
-    createBoard() {
-        for (let r = 0; r < logic.rows; r++) {
-            this.sprites[r] = [];
-            for (let c = 0; c < logic.cols; c++) {
-                this.renderTile(r, c);
-            }
-        }
-    }
-
-    renderTile(r, c) {
-        let x = this.offset.x + c * this.tileSize;
-        let y = this.offset.y + r * this.tileSize;
-        let type = logic.board[r][c];
-        let sprite = this.add.sprite(x, y, 'type' + type).setInteractive();
-        sprite.setDisplaySize(50, 50); 
-        sprite.setData('pos', {r, c});
-        this.input.setDraggable(sprite); 
-        this.sprites[r][c] = sprite;
-        return sprite;
-    }
-
-    async swapTiles(p1, p2) {
-        this.hand.setAnimating(true);
-        let temp = logic.board[p1.r][p1.c];
-        logic.board[p1.r][p1.c] = logic.board[p2.r][p2.c];
-        logic.board[p2.r][p2.c] = temp;
-
-        await this.performSwapAnimation(p1, p2);
-
-        let matches = logic.checkMatches();
-        if (matches.length > 0) {
-            await this.processMatches(matches);
-        } else {
-            logic.board[p1.r][p1.c] = logic.board[p2.r][p2.c];
-            logic.board[p2.r][p2.c] = temp;
-            await this.performSwapAnimation(p1, p2);
-        }
-        this.hand.setAnimating(false);
-    }
-
-    performSwapAnimation(p1, p2) {
-        return new Promise(resolve => {
-            let s1 = this.sprites[p1.r][p1.c];
-            let s2 = this.sprites[p2.r][p2.c];
-            let x1 = this.offset.x + p1.c * this.tileSize;
-            let y1 = this.offset.y + p1.r * this.tileSize;
-            let x2 = this.offset.x + p2.c * this.tileSize;
-            let y2 = this.offset.y + p2.r * this.tileSize;
-
-            this.tweens.add({ targets: s1, x: x2, y: y2, duration: 200 });
-            this.tweens.add({
-                targets: s2, x: x1, y: y1, duration: 200,
-                onComplete: () => {
-                    this.sprites[p1.r][p1.c] = s2;
-                    this.sprites[p2.r][p2.c] = s1;
-                    s1.setData('pos', { r: p2.r, c: p2.c });
-                    s2.setData('pos', { r: p1.r, c: p1.c });
-                    resolve();
-                }
-            });
-        });
-    }
-
-    async processMatches(matches) {
-        let result = logic.calculateEffect(matches);
-        this.hpText.setText(`BOSS HP: ${Math.max(0, logic.monsterHP)}`);
-        
-        let animations = [];
-        matches.forEach(m => {
-            let s = this.sprites[m.r][m.c];
-            logic.board[m.r][m.c] = null;
-            animations.push(new Promise(res => {
-                this.tweens.add({
-                    targets: s, scale: 0, alpha: 0, duration: 200,
-                    onComplete: () => { s.destroy(); res(); }
+                // 點擊移除功能
+                slotBg.on('pointerdown', () => {
+                    logic.squad[i] = null; // 邏輯層清空
+                    this.scene.restart();  // 刷新畫面
                 });
-            }));
-        });
-        await Promise.all(animations);
-        await this.dropAndFill();
 
-        let nextMatches = logic.checkMatches();
-        if (nextMatches.length > 0) {
-            await this.processMatches(nextMatches);
-        } else {
-            if (logic.monsterHP <= 0) {
-                this.handleVictory();
+                // 長按查看詳情
+                this.setupLongPress(slotBg, hero);
             } else {
-                this.handleMonsterTurn();
+                // 空位顯示
+                container.add(this.add.text(0, 0, "EMPTY", { fontSize: '12px', color: '#444' }).setOrigin(0.5));
             }
         }
     }
 
-    async dropAndFill() {
-        let dropTweens = [];
-        for (let c = 0; c < logic.cols; c++) {
-            let emptySpots = 0;
-            for (let r = logic.rows - 1; r >= 0; r--) {
-                if (logic.board[r][c] === null) {
-                    emptySpots++;
-                } else if (emptySpots > 0) {
-                    let targetR = r + emptySpots;
-                    logic.board[targetR][c] = logic.board[r][c];
-                    logic.board[r][c] = null;
-                    let sprite = this.sprites[r][c];
-                    this.sprites[targetR][c] = sprite;
-                    this.sprites[r][c] = null;
-                    sprite.setData('pos', { r: targetR, c: c });
-                    dropTweens.push(new Promise(res => {
-                        this.tweens.add({
-                            targets: sprite, y: this.offset.y + targetR * this.tileSize,
-                            duration: 300, ease: 'Bounce.easeOut', onComplete: res
-                        });
-                    }));
+    /**
+     * 繪製下方玩家擁有的英雄清單
+     */
+    drawHeroInventory() {
+        this.add.text(40, 280, "HERO INVENTORY (Tap to deploy)", { fontSize: '16px', color: '#aaaaaa' });
+
+        logic.heroes.forEach((hero, i) => {
+            const col = i % 5;
+            const row = Math.floor(i / 5);
+            const x = 65 + (col * 80);
+            const y = 360 + (row * 110);
+
+            const container = this.add.container(x, y);
+            
+            // 英雄底框
+            const heroBg = this.add.rectangle(0, 0, 72, 95, 0x2a2a3a)
+                .setStrokeStyle(1, 0x888888)
+                .setInteractive();
+            
+            // 英雄圖片
+            const img = this.add.image(0, 0, 'hero_' + hero.type).setDisplaySize(68, 91);
+            
+            // 檢查該英雄是否已在編隊中 (如果在，變暗)
+            if (logic.squad.includes(hero)) {
+                img.setTint(0x444444);
+                this.add.text(x, y + 40, "DEPLOYED", { fontSize: '10px', color: '#ffd700' }).setOrigin(0.5);
+            }
+
+            container.add([heroBg, img]);
+
+            // 點擊部署功能
+            heroBg.on('pointerdown', () => {
+                const emptyIdx = logic.squad.indexOf(null);
+                const alreadyIn = logic.squad.includes(hero);
+
+                if (!alreadyIn && emptyIdx !== -1) {
+                    logic.squad[emptyIdx] = hero; // 放入第一個空位
+                    this.scene.restart();
+                } else if (alreadyIn) {
+                    // 如果點擊已在陣上的英雄，可以做個小震動提示
+                    this.tweens.add({ targets: container, x: x + 5, duration: 50, yoyo: true, repeat: 2 });
                 }
-            }
-            for (let i = 0; i < emptySpots; i++) {
-                let type = Math.floor(Math.random() * 4);
-                logic.board[i][c] = type;
-                let sprite = this.renderTile(i, c);
-                sprite.y -= 250;
-                dropTweens.push(new Promise(res => {
-                    this.tweens.add({
-                        targets: sprite, y: this.offset.y + i * this.tileSize,
-                        duration: 400, ease: 'Bounce.easeOut', onComplete: res
-                    });
-                }));
-            }
-        }
-        await Promise.all(dropTweens);
+            });
+
+            // 長按查看詳情
+            this.setupLongPress(heroBg, hero);
+        });
     }
 
-    handleMonsterTurn() {
-        let dmg = logic.monsterAttack();
-        this.playerHPText.setText(`PLAYER HP: ${logic.playerHP} / ${logic.playerMaxHP}`);
-        this.cameras.main.shake(200, 0.01);
-        logic.endTurn();
-        if (logic.playerHP <= 0) {
-            alert("你被擊敗了！");
-            this.scene.start('MainMenu'); 
-        }
-    }
+    /**
+     * 通用長按檢測邏輯
+     * @param {Phaser.GameObjects.GameObject} target 監聽對象
+     * @param {Object} heroData 英雄資料
+     */
+    setupLongPress(target, heroData) {
+        let timer;
+        
+        target.on('pointerdown', () => {
+            // 600 毫秒判定為長按
+            timer = this.time.delayedCall(600, () => {
+                // 啟動 Hero.js (Key: HeroDetailScene)
+                this.scene.launch('HeroDetailScene', { hero: heroData });
+            });
+        });
 
-    handleVictory() {
-        logic.nextLevel();
-        alert(`討伐成功！進入下一關`);
-        this.scene.start('MainMenu');
+        // 如果手放開、移開、或滾動，取消計時
+        target.on('pointerup', () => { if (timer) timer.remove(); });
+        target.on('pointerout', () => { if (timer) timer.remove(); });
     }
 }
