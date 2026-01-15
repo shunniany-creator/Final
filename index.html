@@ -5,28 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Merge Dungeon Rush - 三消地牢 (擴張版)</title>
     <style>
-     body {
-        margin: 0;
-        padding: 0;
-        background-color: #000; /* 背景全黑才能突顯橘光 */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        overflow: hidden;
-    }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000; /* 背景全黑突顯發光效果 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
 
-    #game-container {
-        width: 450px;
-        height: 800px;
-        position: relative;
-        /* 橘色發光 */
-        box-shadow: 0 0 30px rgba(238, 119, 0, 0.4); 
-        border: 2px solid #555;
-        background-color: #1a1a1a;
-        overflow: hidden;
-    }
-</style>
+        #game-container {
+            width: 450px;
+            height: 800px;
+            position: relative;
+            /* 橘色外發光效果，增加地牢氛圍 */
+            box-shadow: 0 0 40px rgba(238, 119, 0, 0.5); 
+            border: 2px solid #333;
+            background-color: #1a1a1a;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
 
@@ -38,8 +39,7 @@
 
     <script src="hand.js"></script>
 
-    <script src="manu.js"></script>            <script src="GameScene.js"></script>       <script src="StoreScene.js"></script>      <script src="SquadScene.js"></script>      <script src="InventoryScene.js"></script>  <script src="game.js"></script>
+    <script src="manu.js"></script>           <script src="GameScene.js"></script>      <script src="StoreScene.js"></script>     <script src="SquadScene.js"></script>     <script src="InventoryScene.js"></script> <script src="hero.js"></script>           <script src="game.js"></script>
 
 </body>
 </html>
-
