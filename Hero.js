@@ -1,4 +1,4 @@
-class HeroDetailScene extends Phaser.Scene {
+class Hero extends Phaser.Scene {
     constructor() { super({ key: 'HeroDetailScene' }); }
     init(data) { this.hero = data.hero; }
 
