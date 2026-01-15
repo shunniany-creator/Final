@@ -2,35 +2,72 @@ class SquadScene extends Phaser.Scene {
     constructor() { super({ key: 'SquadScene' }); }
 
     create() {
-        this.add.text(225, 50, "英雄編隊", { fontSize: '32px' }).setOrigin(0.5);
-        
-        // 計算最大出戰人數：1 + Math.floor(Level / 3)
-        let maxSlots = Math.min(5, 1 + Math.floor(logic.playerLevel / 3));
-        this.add.text(225, 100, `當前最大出戰數：${maxSlots}`, { color: '#aaa' }).setOrigin(0.5);
+        this.add.rectangle(225, 400, 450, 800, 0x12121a);
+        this.add.text(225, 40, "HERO SQUAD", { fontSize: '28px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
 
-        // 顯示當前隊伍
-        logic.heroes.forEach((hero, index) => {
-            let isEquipped = logic.team.includes(hero.id);
-            let color = isEquipped ? 0x00ff00 : 0x555555;
+        // 顯示當前編隊 (5格)
+        this.drawSquadSlots();
+        // 顯示擁有英雄清單
+        this.drawHeroList();
+
+        let backBtn = this.add.text(225, 750, "RETURN", { fontSize: '20px', color: '#888' })
+            .setOrigin(0.5).setInteractive({ useHandCursor: true });
+        backBtn.on('pointerdown', () => this.scene.start('MainMenu'));
+    }
+
+    drawSquadSlots() {
+        this.add.text(40, 100, "Current Squad:", { fontSize: '18px', color: '#aaa' });
+        logic.squad.forEach((hero, i) => {
+            const x = 65 + (i * 80);
+            const y = 180;
+            const slot = this.add.container(x, y);
             
-            let bar = this.add.rectangle(225, 200 + (index * 60), 350, 50, color).setInteractive();
-            this.add.text(60, 200 + (index * 60), `${hero.name} (ATK:${hero.atk})`).setOrigin(0, 0.5);
+            // 底框
+            const bg = this.add.rectangle(0, 0, 70, 90, 0x1f1f2e).setStrokeStyle(2, 0x555566).setInteractive();
+            slot.add(bg);
 
-            bar.on('pointerdown', () => {
-                if (isEquipped) {
-                    logic.team = logic.team.filter(id => id !== hero.id);
-                } else {
-                    if (logic.team.length < maxSlots) {
-                        logic.team.push(hero.id);
-                    } else {
-                        alert("隊伍已滿！提升等級可增加上限。");
-                    }
+            if (hero) {
+                const img = this.add.image(0, 0, 'hero_' + hero.type).setDisplaySize(65, 85);
+                slot.add(img);
+                // 點擊從編隊移除
+                bg.on('pointerdown', () => {
+                    logic.squad[i] = null;
+                    this.scene.restart();
+                });
+                this.setupLongPress(bg, hero);
+            }
+        });
+    }
+
+    drawHeroList() {
+        this.add.text(40, 260, "Owned Heroes (Click to Assign):", { fontSize: '18px', color: '#aaa' });
+        logic.heroes.forEach((hero, i) => {
+            const x = 65 + (i % 5 * 80);
+            const y = 350 + (Math.floor(i / 5) * 110);
+            const container = this.add.container(x, y);
+            const bg = this.add.rectangle(0, 0, 70, 90, 0x2a2a3a).setStrokeStyle(1, 0x888).setInteractive();
+            const img = this.add.image(0, 0, 'hero_' + hero.type).setDisplaySize(65, 85);
+            container.add([bg, img]);
+
+            bg.on('pointerdown', () => {
+                const emptyIdx = logic.squad.indexOf(null);
+                if (emptyIdx !== -1 && !logic.squad.includes(hero)) {
+                    logic.squad[emptyIdx] = hero;
+                    this.scene.restart();
                 }
-                this.scene.restart();
+            });
+            this.setupLongPress(bg, hero);
+        });
+    }
+
+    setupLongPress(object, hero) {
+        let timer;
+        object.on('pointerdown', () => {
+            timer = this.time.delayedCall(600, () => {
+                this.scene.launch('HeroDetailScene', { hero: hero });
             });
         });
-
-        this.add.text(50, 750, "確認返回", { color: '#ffff00' })
-            .setInteractive().on('pointerdown', () => this.scene.start('MainMenu'));
+        object.on('pointerup', () => { if (timer) timer.remove(); });
+        object.on('pointerout', () => { if (timer) timer.remove(); });
     }
 }
