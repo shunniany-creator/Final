@@ -67,7 +67,7 @@ class StoreScene extends Phaser.Scene {
 
         // 名字資訊
         const enName = this.add.text(0, 45, data.name.split(' (')[0], {
-            fontSize: '13px', color: attrColors[data.type], fontStyle: 'bold'
+            fontSize: '13px', color: '#ffffff', fontStyle: 'bold'
         }).setOrigin(0.5);
 
         const cnName = this.add.text(0, 70, data.name.split('(')[1].replace(')', ''), {
